@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GOODS管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // スクリプト読み込み前の初期フォールバックカラーとして維持します
+                        hinataSky: '#7ec4ea',
+                        hinataDarkSky: '#5daedb',
+                        hinataLight: '#eef7fc'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 💋 アクティブなタブの文字色を動的に制御するため、初期スタイルをマイルドにします */
+        .nav-links a.active { background-color: #ffffff; }
+        
+        .nav-links a:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <header id="appHeader" class="bg-hinataSky text-white p-6 shadow-sm text-center transition-colors duration-300">
+        <div class="container mx-auto">
+            <h1 id="appTitle" class="text-2xl md:text-3xl font-bold tracking-wider flex items-center justify-center gap-2">
+                GOODS管理システム 
+            </h1>
+            <p id="appSubtitle" class="text-xs md:text-sm opacity-95 mt-1 tracking-wide"></p>
+            <nav class="nav-links"></nav>
+        </div>
+    </header>
+
+    <section class="container mx-auto px-6 pt-6">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">🔍 キーワード検索</label>
+                <input type="text" id="keywordSearch" class="focus-ring-target w-full p-2 border border-slate-300 rounded-xl outline-none text-sm transition" placeholder="グッズ名や場所を入力">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">👥 メンバーで絞り込み</label>
+                <select id="memberFilter" class="focus-ring-target w-full p-2 border border-slate-300 rounded-xl outline-none text-sm bg-white transition">
+                    <option value="ALL">全員表示</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">📂 カテゴリ絞り込み</label>
+                <select id="categoryFilter" class="focus-ring-target w-full p-2 border border-slate-300 rounded-xl outline-none text-sm bg-white transition">
+                    <option value="ALL">すべて表示</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <main class="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8 flex-1">
+        
+        <div class="lg:col-span-1">
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200 sticky top-6">
+                <div class="flex items-center justify-between border-b pb-2 mb-4">
+                    <h2 id="formTitle" class="text-xl font-bold text-slate-700"> GOODS新規登録</h2>
+                    <button type="button" id="cancelEditBtn" class="hidden text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded-md hover:bg-slate-300">編集をキャンセル</button>
+                </div>
+                <form id="assetForm" enctype="multipart/form-data" class="space-y-4">
+                    <input type="hidden" name="edit_asset_id" id="editAssetId" value="">
+                    <input type="hidden" name="group" id="hiddenGroupField" value="">
+
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">メンバー名 *</label>
+                        <select name="member_name" id="memberFormSelect" required class="focus-ring-target w-full p-2.5 border border-slate-300 rounded-xl outline-none bg-white transition">
+                            <option value="">メンバーを選択してください</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">グッズ名 *</label>
+                        <input type="text" name="item_name" id="itemNameInput" required class="focus-ring-target w-full p-2.5 border border-slate-300 rounded-xl outline-none transition" placeholder="アイテム名を入力">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">カテゴリ *</label>
+                        <select name="category" id="categorySelect" class="focus-ring-target w-full p-2.5 border border-slate-300 rounded-xl outline-none bg-white transition">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">ステータス *</label>
+                        <select name="status" id="statusSelect" class="focus-ring-target w-full p-2.5 border border-slate-300 rounded-xl outline-none bg-white transition">
+                            <option value="展示中">展示中 </option>
+                            <option value="保管中">保管中 </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">保管ロケーション *</label>
+                        <input type="text" name="location" id="locationInput" required class="focus-ring-target w-full p-2.5 border border-slate-300 rounded-xl outline-none transition" placeholder="デスクの上">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 text-slate-700">グッズ写真添付</label>
+                        <div class="flex items-center justify-between border border-slate-300 rounded-xl overflow-hidden bg-white">
+                            <input type="file" name="photo" id="photoInput" accept="image/*" class="hidden">
+                            <span id="fileNameDisplay" class="text-sm text-slate-400 px-3 truncate">ファイルを選択してください</span>
+                            <button type="button" id="uploadBtn" onclick="document.getElementById('photoInput').click()" class="bg-hinataSky text-white px-4 py-2.5 text-sm font-bold transition">
+                                アップロード
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" id="submitBtn" class="w-full text-white p-3 rounded-xl font-bold shadow-md hover:shadow-lg hover:opacity-95 transition tracking-wider mt-2">
+                        登録
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-4">
+            <h2 class="text-xl font-bold text-slate-700 flex items-center gap-2">
+                📦 登録済みGOODS一覧
+                <span id="assetCount" class="text-sm px-3 py-1 rounded-full font-bold">0 件のデータ</span>
+            </h2>
+            
+            <div id="assetGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </div>
+
+    </main>
+
+    <div id="imageModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 cursor-zoom-out">
+        <div class="max-w-[90vw] max-h-[90vh] relative">
+            <img id="modalImage" src="" alt="全画面表示" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/10">
+        </div>
+    </div>
+
+    <footer id="appFooter" class="bg-slate-100 text-slate-500 text-center py-4 text-xs border-t border-slate-200 mt-6 font-mono">
+        Generated by the Oshikatsu Sys Admin Sister &copy; 2026
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

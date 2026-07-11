@@ -1,0 +1,6 @@
+# データファイルをGitHubに上げないための魔法の設定よ
+goods_master.json
+settings.json
+static/item_photos/
+__pycache__/
+*.pyc

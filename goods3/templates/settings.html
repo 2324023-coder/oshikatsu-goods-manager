@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アーティスト追加・編集・消去</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { hinataSky: '#7ec4ea', hinataDarkSky: '#5daedb' } } } }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen p-4 md:p-8">
+
+    <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+        <div class="flex items-center justify-between border-b pb-3 mb-6">
+            <h1 class="text-xl font-bold text-slate-700">⚙️ アーティスト管理設定</h1>
+            <a href="/" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg border font-bold transition">🏠 戻る</a>
+        </div>
+
+        <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <label class="block text-xs font-bold text-slate-500 mb-1">📝 操作するアーティストを選択</label>
+            <select id="artistSelector" class="w-full p-2 border border-slate-300 rounded-xl outline-none text-sm bg-white" onchange="loadSelectedArtist()">
+                <option value="NEW">-- 新規追加（新しくグループを作る） --</option>
+            </select>
+        </div>
+
+        <form id="configForm" class="space-y-5">
+            <div>
+                <label class="block text-sm font-bold mb-1 text-slate-700">アーティスト名 / グループ名</label>
+                <input type="text" id="groupNameInput" required class="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-hinataSky outline-none text-sm" placeholder="">
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-1 text-slate-700">テーマカラー設定</label>
+                <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <input type="color" id="themeColorInput" value="#7ec4ea" class="w-12 h-10 border border-slate-300 rounded-lg cursor-pointer bg-transparent">
+                    <div class="text-xs text-slate-500">
+                        <p class="font-bold text-slate-700">カラーピッカーから選択</p>
+                        <p>グループのイメージカラーがシステム全体のシステムカラーに同期します。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-1 text-slate-700">メンバー名（カンマ区切り）</label>
+                <textarea id="membersInput" rows="4" class="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-hinataSky outline-none text-sm font-mono" placeholder="メンバーA,メンバーB,メンバーC"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold mb-1 text-slate-700">カテゴリ（カンマ区切り）</label>
+                <textarea id="categoriesInput" rows="3" class="w-full p-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-hinataSky outline-none text-sm font-mono" placeholder="アクスタ,生写真"></textarea>
+            </div>
+
+            <div class="pt-2 flex flex-col gap-3">
+                <button type="submit" class="w-full bg-gradient-to-r from-hinataSky to-hinataDarkSky text-white p-3 rounded-xl font-bold shadow-md hover:opacity-95 transition tracking-wider">
+                    設定を保存・追加する
+                </button>
+                
+                <button type="button" id="deleteBtn" class="w-full bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 p-3 rounded-xl font-bold transition tracking-wider hidden" onclick="deleteCurrentArtist()">
+                    🚨 このアーティストを完全に消去する
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let allSettings = [];
+
+        async function loadAllSettings() {
+            const res = await fetch('/api/settings');
+            allSettings = await res.json();
+            
+            const selector = document.getElementById('artistSelector');
+            selector.innerHTML = '<option value="NEW">-- 新規追加（新しくグループを作る） --</option>';
+            
+            allSettings.forEach(g => {
+                selector.appendChild(new Option(g.group_name, g.group_name));
+            });
+        }
+
+        function loadSelectedArtist() {
+            const val = document.getElementById('artistSelector').value;
+            const nameInput = document.getElementById('groupNameInput');
+            const colorInput = document.getElementById('themeColorInput');
+            const deleteBtn = document.getElementById('deleteBtn');
+            
+            if (val === "NEW") {
+                document.getElementById('configForm').reset();
+                nameInput.disabled = false;
+                colorInput.value = "#7ec4ea";
+                deleteBtn.classList.add('hidden');
+            } else {
+                const target = allSettings.find(g => g.group_name === val);
+                if (target) {
+                    nameInput.value = target.group_name;
+                    nameInput.disabled = true;
+                    // 💋 既存データのカラーコードをカラーピッカーにセットします
+                    colorInput.value = target.theme_color || "#7ec4ea";
+                    document.getElementById('membersInput').value = target.members.join(',');
+                    document.getElementById('categoriesInput').value = target.categories.join(',');
+                    deleteBtn.classList.remove('hidden');
+                }
+            }
+        }
+
+        async function deleteCurrentArtist() {
+            const val = document.getElementById('artistSelector').value;
+            if (val === "NEW") return;
+
+            const firstConfirm = confirm(`【最終確認】\n本当に「${val}」をシステムから完全に消去しますか？`);
+            if (!firstConfirm) return;
+
+            const secondConfirm = confirm(`🚨【警告：データが失われます】🚨\n「${val}」に登録されているすべてのグッズ・写真データも一緒に削除されます。この操作は取り消せません。本当によろしいですか？`);
+            if (!secondConfirm) return;
+
+            try {
+                const res = await fetch('/api/settings/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ group_name: val })
+                });
+                if (res.ok) {
+                    alert(`「${val}」の消去が完了しました。`);
+                    window.location.href = '/';
+                }
+            } catch (err) {
+                alert('消去処理に失敗しました。');
+            }
+        }
+
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const group_name = document.getElementById('groupNameInput').value.trim();
+            // 💋 選択されたカラーコードをPOSTペイロードに結合します
+            const theme_color = document.getElementById('themeColorInput').value;
+            const members = document.getElementById('membersInput').value.split(',').map(s => s.trim()).filter(s => s !== "");
+            const categories = document.getElementById('categoriesInput').value.split(',').map(s => s.trim()).filter(s => s !== "");
+
+            const payload = { group_name, theme_color, members, categories };
+
+            const res = await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert(`${group_name} の設定を保存しました。`);
+                window.location.href = '/';
+            }
+        });
+
+        loadAllSettings();
+    </script>
+</body>
+</html>
